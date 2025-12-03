@@ -4,16 +4,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-sns.set_theme(style="darkgrid")
-plt.rcParams['figure.figsize'] = (15, 12)
-
-def load_data_from_csv(file_path):
+def loaddata(file_path):
     try:
         df = pd.read_csv(file_path, parse_dates=['Date'], thousands=',')
         df.columns = [c.strip().title() for c in df.columns]
         
         if 'Close/Last' not in df.columns:
-            raise ValueError(f"Could not find 'Close/Last' column. Available: {df.columns}")
+            print(f"Could not find 'Close/Last' column. Available: {df.columns}")
+            return None
 
         df.rename(columns={'Close/Last': 'Price'}, inplace=True)
         
@@ -30,7 +28,7 @@ def load_data_from_csv(file_path):
         print(f"[Error] Failed to load File: {e}")
         return None
 
-def calculate_metrics(df, risk_free_rate=0.04):
+def metrics(df, risk_free_rate=0.04):
     if df.empty:
         return {
             'Total Return': 0.0,
@@ -68,7 +66,7 @@ def calculate_metrics(df, risk_free_rate=0.04):
         'Max Drawdown': max_drawdown
     }
 
-def plot_performance(coins_dict):
+def perfomance(coins_dict):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 12))
     
     for name, df in coins_dict.items():
@@ -86,13 +84,13 @@ def plot_performance(coins_dict):
     ax1.legend()
     
     ax2.set_title('Drawdown (Decline from Peak)', fontsize=14)
-    ax2.set_ylabel('Drawdown %')
+    ax2.set_ylabel('Drawdown %') 
     ax2.legend()
     
     plt.tight_layout()
     plt.show()
 
-def plot_correlation(coins_dict):
+def correlation(coins_dict):
     if len(coins_dict) < 2:
         print("[Info] Need at least 2 coins for correlation analysis.")
         return
@@ -135,7 +133,7 @@ def main_menu():
             path = input("Enter CSV Path: ").strip().replace('"', '').replace("'", "")
             
             if os.path.exists(path):
-                df = load_data_from_csv(path)
+                df = loaddata(path)
                 if df is not None and not df.empty:
                     df['Returns'] = df['Price'].pct_change()
                     coins[ticker] = df
@@ -155,17 +153,17 @@ def main_menu():
             print("-" * 85)
             
             for name, df in coins.items():
-                m = calculate_metrics(df)
+                m = metrics(df)
                 print(f"{name:<10} | {m['Total Return']:>9.2%} | {m['Volatility']:>11.2%} | {m['Sharpe Ratio']:>14.2f} | {m['Max Drawdown']:>14.2%}")
             print("-" * 85)
             input("\nPress Enter to continue...")
 
         elif choice == '3':
-            if coins: plot_performance(coins)
+            if coins: perfomance(coins)
             else: print("[!] No data loaded.")
 
         elif choice == '4':
-            if coins: plot_correlation(coins)
+            if coins: correlation(coins)
             else: print("[!] No data loaded.")
             
         elif choice == '5':
